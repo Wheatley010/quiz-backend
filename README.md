@@ -18,9 +18,8 @@
 - [🔐 Управление доступом](#-управление-доступом-rbac)
 - [👨‍💻 Разработка](#️-разработка)
 - [🎨 Возможности интерфейса](#-возможности-интерфейса)
-- [️ Обработка ошибок](#️-обработка-ошибок)
+- [🛡️ Обработка ошибок](#️-обработка-ошибок)
 - [🔧 Утилиты](#-утилиты)
-- [📚 Ресурсы](#-ресурсы)
 - [📝 Лицензия](#-лицензия)
 
 ---
@@ -311,7 +310,7 @@ Content-Type: application/json
 
 ---
 
-#### 👨‍💼 Register Admin (One-Time Only)
+#### 👨‍🐬 Регистрация администратора (Одноразово)
 ```http
 POST /api/auth/register-admin
 Content-Type: application/json
@@ -323,19 +322,19 @@ Content-Type: application/json
 }
 ```
 
-**✅ Response (201 Created):**
+**✅ Ответ (201 Created):**
 ```json
 {
-  "message": "Admin user created",
+  "message": "Админ создан",
   "userId": "507f1f77bcf86cd799439011"
 }
 ```
 
 ---
 
-### 📚 Quiz Endpoints
+### 📚 Эндпоинты квицов
 
-#### ➕ Create Quiz
+#### ➕ Создание квица
 ```http
 POST /api/quizzes
 Authorization: Bearer <token>
@@ -359,32 +358,32 @@ Content-Type: application/json
 }
 ```
 
-**✅ Response (201 Created):** Quiz object with `_id`
+**✅ Ответ (201 Created):** Объект квица с `_id`
 
 ---
 
-#### 📖 Get All Quizzes
+#### 📖 Получить все квицы
 ```http
 GET /api/quizzes
 Authorization: Bearer <token>
 ```
 
-**✅ Response (200 OK):** Array of all quizzes with owner info
+**✅ Ответ (200 OK):** Массив всех квицов с информацией владельца
 
 ---
 
-#### 🔍 Get Single Quiz
+#### 🔍 Получить один квиц
 ```http
 GET /api/quizzes/:id
 Authorization: Bearer <token>
 ```
 
-**✅ Response (200 OK):** Single quiz object with full details
+**✅ Ответ (200 OK):** Объект одного квица с полными деталями
 
 ---
 
-#### ✏️ Update Quiz
-> Only owner or admin can update
+#### ✏️ Обновление квица
+> Обновлять могут только владелец или админ
 
 ```http
 PUT /api/quizzes/:id
@@ -398,22 +397,22 @@ Content-Type: application/json
 }
 ```
 
-**✅ Response (200 OK):** Updated quiz object
+**✅ Ответ (200 OK):** Объект обновленного квица
 
 ---
 
-#### 🗑️ Delete Quiz
-> Only owner or admin can delete
+#### 🗑️ Удаление квица
+> Удалять могут только владелец или админ
 
 ```http
 DELETE /api/quizzes/:id
 Authorization: Bearer <token>
 ```
 
-**✅ Response (200 OK):**
+**✅ Ответ (200 OK):**
 ```json
 {
-  "message": "Quiz deleted"
+  "message": "Квиц удален"
 }
 ```
 
@@ -470,15 +469,15 @@ Authorization: Bearer <token>
 
 ---
 
-### 👤 User Endpoints
+### 👤 Эндпоинты пользователя
 
-#### 👤 Get Profile
+#### 👤 Получить профиль
 ```http
 GET /api/users/profile
 Authorization: Bearer <token>
 ```
 
-**✅ Response (200 OK):**
+**✅ Ответ (200 OK):**
 ```json
 {
   "_id": "507f1f77bcf86cd799439011",
@@ -490,7 +489,7 @@ Authorization: Bearer <token>
 
 ---
 
-#### ✏️ Update Profile
+#### ✏️ Обновить профиль
 ```http
 PUT /api/users/profile
 Authorization: Bearer <token>
@@ -502,52 +501,53 @@ Content-Type: application/json
 }
 ```
 
-**✅ Response (200 OK):** Updated user object
+**✅ Ответ (200 OK):** Обновленный объект пользователя
 
 ---
 
-### ⚠️ Error Responses
+### ⚠️ Ответы об ошибках
 
-All errors return structured JSON:
+Все ошибки возвращают структурированные JSON:
 
 ```json
 {
-  "message": "Error description",
-  "errors": [...],      // Optional: validation details
-  "details": {...}      // Optional: additional context
+  "message": "Описание ошибки",
+  "errors": [...],      // Опционально: детали валидации
+  "details": {...}      // Опционально: дополнительные данные
 }
 ```
 
-| Status | Meaning | Example |
-|--------|---------|---------|
-| `400` | Bad Request / Validation Error | Missing email field |
-| `401` | Unauthorized | Missing or invalid token |
-| `403` | Forbidden | Insufficient permissions |
-| `404` | Not Found | Quiz doesn't exist |
-| `500` | Server Error | Database connection failed |
+| Код | Ответ | Пример |
+|--------|---------|----------|
+| `400` | Ошибка валидации / Неверные данные | Опустим поле email |
+| `401` | Неавторизованные | Опустим или невалидный токен |
+| `403` | Недостаточно разрешений | Нехватает правлений |
+| `404` | Не найдено | Квиц не существует |
+| `500` | Ошибка сервера | Не удалось подключиться к БД |
+
 
 ---
 
-## ✅ Input Validation
+## ✅ Валидация входных данных
 
-All endpoints include **express-validator middleware** ensuring data integrity:
+Все эндпоинты включают **express-validator middleware** для защиты данных:
 
-### 🔐 Auth Endpoints
-- **Email**: Valid email format required
-- **Password**: Minimum 6 characters
-- **Username**: Required field
+### 🔐 Эндпоинты аутентификации
+- **Email**: Требуется валидный формат email
+- **Пароль**: Минимум 6 символов
+- **Username**: Обязательное поле
 
-### 📚 Quiz Endpoints
-- **Title**: Required, non-empty
-- **Questions**: Array with at least 1 item
-  - **Question Text**: Required
-  - **Options**: Array with minimum 2 options
-  - **Correct Index**: Valid integer index
+### 📚 Эндпоинты квизов
+- **Title**: Обязательно, не пусто
+- **Questions**: Массив как минимум с 1 элементом
+  - **Question Text**: Обязательно
+  - **Options**: Массив минимум с 2 вариантами
+  - **Correct Index**: Валидный целый индекс
 
-### 📊 Result Endpoints
-- **QuizId**: Valid MongoDB ID
-- **Answers**: Array of valid option indices
-- **Score & Total**: Non-negative integers
+### 📊 Эндпоинты результатов
+- **QuizId**: Валидный MongoDB ID
+- **Answers**: Массив валидных индексов вариантов
+- **Score & Total**: Неотрицательные целые числа
 
 ### 🚫 Validation Error Response
 Invalid requests return **HTTP 400**:
@@ -568,7 +568,7 @@ Invalid requests return **HTTP 400**:
 
 ---
 
-## 🛡️ Error Handling
+## 🛡️ Обработка ошибок
 
 All errors are caught and handled globally:
 
@@ -595,70 +595,77 @@ Request → Middleware → Controller → Error Caught
 }
 ```
 
-### HTTP Status Codes
+### HTTP Коды состояния
 
-- **400 Bad Request** — Validation errors, malformed input
-- **401 Unauthorized** — Missing or invalid JWT token
-- **403 Forbidden** — Insufficient permissions (not owner/admin)
-- **404 Not Found** — Resource doesn't exist
-- **500 Server Error** — Unexpected server error
+- **400 Bad Request** — Ошибки валидации, неправильные данные
+- **401 Unauthorized** — Отсутствуют или невалидны JWT токены
+- **403 Forbidden** — Недостаточно разрешений
+- **404 Not Found** — Ресурс не найден
+- **500 Server Error** — Ошибка сервера
 
-### ApiError Class
+### Класс ApiError
 
-Controllers use custom `ApiError` class:
+Контроллеры используют куст домный класс `ApiError`:
 ```javascript
-// In controller
+// В контроллере
 if (!quiz) {
-  return next(new ApiError(404, 'Quiz not found'));
+  return next(new ApiError(404, 'Квиз не найден'));
 }
 ```
 
-This ensures consistent error formatting across the entire API.
+Это гарантирует одноообразное оформление ошибок во всем API.
 
 ---
 
-## 🔐 Role-Based Access Control (RBAC)
+## 🔐 Управление доступом (RBAC)
 
-### 👤 Regular User Role
+### 👤 Обычный пользователь
 
-| Action | Allowed | Notes |
+| Действие | Разрешено | Примечание |
 |--------|---------|-------|
-| Register & Login | ✅ Yes | Self-service |
-| Create Quiz | ✅ Yes | Becomes owner |
-| Take Quiz | ✅ Yes | Any quiz |
-| View Own Results | ✅ Yes | Their scores |
-| Edit Other Quizzes | ❌ No | Forbidden |
+| Регистрация и вход | ✅ Да | Самообслуживание |
+| Создание квиза | ✅ Да | Становится владельцем |
+| Прохождение квиза | ✅ Да | Любой квиз |
+| Просмотр своих результатов | ✅ Да | Собственные баллы |
+| Редактирование других квизов | ❌ Нет | Запрещено |
 
-### 👨‍💼 Admin Role
+### 👨‍💼 Администратор
 
-| Action | Allowed | Notes |
-| Delete Any Quiz | ✅ Yes | Override |
-| View All Results | ✅ Yes | From all users |
-| Delete Any Result | ✅ Yes | Override |
-| Manage Users | ✅ Yes | Full control |
+| Действие | Разрешено | Примечание |
+|--------|---------|-------|
+| Удалить любой квиз | ✅ Да | Отменить |
+| Просмотр всех результатов | ✅ Да | От всех пользователей |
+| Удалить любой результат | ✅ Да | Отменить |
+| Управление пользователями | ✅ Да | Полное управление |
 
-**Note**: Admin account is created once via `/api/auth/register-admin`
+**Примечание**: Аккаунт администратора создается при первом запуске сервера
 
 ---
 
-## 🔧 Utility Scripts
+## 🔧 Утилиты
 
-### Seed Sample Quizzes
+### Создание базы шаблонных квицов
 ```bash
 node src/scripts/seedQuiz.js
 ```
-Populates database with sample quizzes for testing
+Пополняет базу данных образцовыми квицами для тестирования
 
-**Output Example:**
+**Пример вывода:**
 ```
-Quiz 1: JavaScript Basics - 3 questions
-Quiz 2: React Fundamentals - 4 questions
-Quiz 3: CSS Grid & Flexbox - 2 questions
+Квиц 1: Основы JavaScript - 3 вопроса
+Квиц 2: Основы React - 4 вопроса
+Квиц 3: CSS Grid & Flexbox - 2 вопроса
 ```
+
+### Сброс пароля администратора
+```bash
 node src/scripts/resetAdminPassword.js
 ```
+
+**Пример вывода:**
 ```
-Admin password reset successfully!
+Пароль администратора успешно сброшен!
+```
 
 ---
 
@@ -670,46 +677,32 @@ Admin password reset successfully!
 
 ---
 
-## 🎨 Frontend Features
+## 🎨 Возможности интерфейса
 
-### Pages & Components
+### Страницы и компоненты
 
-| Page | Features |
+| Страница | Функции |
 |------|----------|
-| **🔐 Login** | Email/password authentication, register link |
-| **📝 Register** | User signup with validation, auto-login |
-| **📚 Quizzes** | Search by title, sort by date/name, card grid layout |
-| **✏️ Edit** | Global edit/delete modes, inline question editing |
-| **🎯 Quiz Taker** | Radio button selection, progress indicator, review before submit |
-| **📊 Results** | Stats cards (total, avg score), sorting, delete modal |
-| **👤 Profile** | View/edit username and password |
+| **🔐 Вход** | Аутентификация email/пароль, ссылка регистрации |
+| **📝 Регистрация** | Регистрация с валидацией, автоматический вход |
+| **📚 Квизы** | Поиск по названию, сортировка по дате/имени, сетка карточек |
+| **✏️ Редактирование** | Глобальные режимы редактирования/удаления, встроенное редактирование вопросов |
+| **🎯 Прохождение** | Выбор вариантов, индикатор прогресса, проверка перед отправкой |
+| **📊 Результаты** | Карточки статистики (всего, средний балл), сортировка, модальное окно удаления |
+| **👤 Профиль** | Просмотр/редактирование имени пользователя и пароля |
 
-### UI/UX Features
+### Функции UI/UX
 
-- ✨ **Responsive Design**: Mobile-first, CSS Grid/Flexbox layouts
----
-
-## 📚 Additional Resources
-
-### Useful Links
-- 🌐 [Express.js Documentation](https://expressjs.com)
-- 🗄️ [MongoDB & Mongoose](https://mongoosejs.com)
-- 🔐 [JWT Best Practices](https://jwt.io)
-- ✅ [express-validator Guide](https://express-validator.github.io)
-
-### Common Issues
-
-**Q: "Cannot find module 'express-validator'"**
-- Run: `npm install` in project root
-
-**Q: "MongoDB connection failed"**
-- Check `MONGO_URI` in `.env`
-- Ensure MongoDB is running locally or MongoDB Atlas is accessible
-
-**Q: "Token is invalid or expired"**
-- Generate new token by logging in again
-- Check `JWT_SECRET` hasn't changed
+- ✨ **Адаптивный дизайн**: Mobile-first, CSS Grid/Flexbox макеты
 
 ---
+
+## 📝 Лицензия
+
+Этот проект лицензируется под MIT License. Используйте его свободно в своих проектах!
+
+---
+
+© 2026 Quiz Platform. Все права защищены.
 
 
