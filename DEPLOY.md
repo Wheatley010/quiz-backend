@@ -42,9 +42,3 @@ Render will provide a public URL (use it in README and submission).
 ## 7) Add deployed URL to `README.md`
 After successful deploy, add the public URL under the **Развертывание** section in `README.md`.
 
----
-
-If you want, I can:
-- attempt to set the `origin` remote and push the repo here, or
-- try to push and create a GitHub repo for you (requires your confirmation), or
-- walk through Render setup step-by-step and fill env vars once repo is available.
