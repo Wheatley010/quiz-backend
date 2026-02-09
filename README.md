@@ -18,8 +18,7 @@
 - [🔐 Управление доступом](#-управление-доступом-rbac)
 - [👨‍💻 Разработка](#️-разработка)
 - [🎨 Возможности интерфейса](#-возможности-интерфейса)
-- [🚀 Развертывание](#-развертывание)
-- [🛡️ Обработка ошибок](#️-обработка-ошибок)
+- [️ Обработка ошибок](#️-обработка-ошибок)
 - [🔧 Утилиты](#-утилиты)
 - [📚 Ресурсы](#-ресурсы)
 - [📝 Лицензия](#-лицензия)
@@ -45,10 +44,6 @@
 **📊 Отслеживание результатов**
 
 Сохраняйте историю прохождения викторин, отслеживайте баллы и просматривайте детальную статистику по каждой попытке.
-
-**📧 Уведомления по электронной почте**
-
-Автоматические письма при регистрации и смене пароля через интеграцию с SendGrid.
 
 **✅ Валидация данных**
 
@@ -76,7 +71,6 @@
 - **JWT (jsonwebtoken)** — токены для безопасной аутентификации
 - **bcryptjs** — хеширование паролей для безопасности
 - **express-validator** — валидация входных данных
-- **SendGrid API** — отправка электронных писем
 - **Nodemon** — автоматическая перезагрузка при разработке
 
 ### 🎨 Frontend (Интерфейс)
@@ -106,7 +100,6 @@ quiz-backend/                           ← Корневая папка прое
 │
 │   ├── 🔌 config/
 │   │   ├── db.js                      Подключение к MongoDB
-│   │   └── mail.js                    Настройка SendGrid
 │
 │   ├── 🎮 controllers/                 Логика обработки запросов
 │   │   ├── authController.js          Регистрация, вход, админ
@@ -169,7 +162,6 @@ quiz-backend/                           ← Корневая папка прое
 - ✅ **Node.js** версии 24 и выше (скачать с [nodejs.org](https://nodejs.org))
 - ✅ **npm** (идёт в комплекте с Node.js)
 - ✅ **MongoDB** (можно установить локально или использовать облачную БД [MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
-- ✅ **SendGrid аккаунт** (опционально, только для функции отправки писем)
 
 ### Пошаговая установка
 
@@ -206,9 +198,6 @@ MONGO_URI=mongodb://localhost:27017/quiz-app
 
 # Секретный ключ для подписи токенов (используйте сложный набор символов)
 JWT_SECRET=ваш-супер-секретный-ключ-из-64-символов
-
-# Ключ SendGrid (если хотите отправлять письма)
-SENDGRID_API_KEY=ваш-sendgrid-ключ
 
 # Данные для создания администратора при первом запуске
 ADMIN_EMAIL=admin@mail.com
@@ -255,7 +244,6 @@ http://localhost:5000/frontend/login.html
 | **PORT** | ✅ Да | На каком порту запускать приложение | `5000` |
 | **MONGO_URI** | ✅ Да | Адрес базы данных MongoDB | `mongodb://localhost:27017/quiz-app` |
 | **JWT_SECRET** | ✅ Да | Секретный ключ для подписи токенов — используйте сложный ключ! | `abc123xyz...` |
-| **SENDGRID_API_KEY** | ❌ Нет | Ключ API для отправки писем | `SG.xxxxx` |
 | **ADMIN_EMAIL** | ✅ Да | Email администратора по умолчанию | `admin@mail.com` |
 | **ADMIN_PASSWORD** | ✅ Да | Пароль администратора | `admin123456` |
 | **ADMIN_USERNAME** | ✅ Да | Имя администратора | `admin` |
@@ -677,30 +665,7 @@ Admin password reset successfully!
 
 ---
 
-## 🚀 Deployment
 
-See the full step-by-step deployment guide in `DEPLOY.md`.
-
-- After you deploy, add the public URL here so it appears in the README and in the final submission.
-
-**Deployed URL (add after deployment):**
-
-```
-NOT DEPLOYED YET
-```
-
-For quick deploy steps (summary):
-
-1. Push code to GitHub:
-```bash
-git push origin main
-```
-2. Connect repository to Render / Railway / Heroku and set environment variables from `.env.example`.
-3. Start command: `node src/server.js` (or use Dockerfile / Procfile included).
-
-More detailed instructions: see [DEPLOY.md](DEPLOY.md).
-
----
 - 💾 **Clear Storage**: Fresh start without logging out:
   ```javascript
   localStorage.clear(); location.reload()
@@ -727,35 +692,12 @@ More detailed instructions: see [DEPLOY.md](DEPLOY.md).
 - ✨ **Responsive Design**: Mobile-first, CSS Grid/Flexbox layouts
 ---
 
-## 🚀 Deployment
-
-1. **Push Code to GitHub**
-   ```bash
-   git push origin main
-   ```
-3. **Create New Web Service**
-   - **Name**: quiz-app
-
-4. **Add Environment Variables** in Render dashboard:
-   JWT_SECRET=your-secret-key
-   SENDGRID_API_KEY=your-sendgrid-key
-   NODE_ENV=production
-
-2. Create cluster (free tier available)
-3. Get connection string: `MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/quiz-app`
-
-- ✅ Secure passwords for admin account
-- ✅ Frontend can access API (CORS enabled)
-
----
-
 ## 📚 Additional Resources
 
 ### Useful Links
 - 🌐 [Express.js Documentation](https://expressjs.com)
 - 🗄️ [MongoDB & Mongoose](https://mongoosejs.com)
 - 🔐 [JWT Best Practices](https://jwt.io)
-- 📧 [SendGrid API Docs](https://sendgrid.com/docs)
 - ✅ [express-validator Guide](https://express-validator.github.io)
 
 ### Common Issues
@@ -770,10 +712,6 @@ More detailed instructions: see [DEPLOY.md](DEPLOY.md).
 **Q: "Token is invalid or expired"**
 - Generate new token by logging in again
 - Check `JWT_SECRET` hasn't changed
-
-**Q: "Email not sending"**
-- Verify `SENDGRID_API_KEY` in `.env`
-- Check SendGrid account has sufficient credits
 
 ---
 
