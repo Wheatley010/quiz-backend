@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quizzes</title>
+  <style>
+    .roleLabel {
+      position: fixed;
+      top: 8px;
+      left: 12px;
+      background: #444;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 999;
+    }
+    .roleLabel.admin {
+      background: #222;
+    }
+    .profileMenu {
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+      z-index: 1000;
+    }
+    .site-header {
+      position: relative;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 8px 16px;
+      background: #fff;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .header-actions { display:flex; gap:12px; align-items:center; }
+    .site-title { font-size: 20px; color: #2563eb; font-weight: 600; }
+    .profileBtn {
+      background: #444;
+      color: #fff;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      min-width: 200px;
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .profileBtn.admin {
+      background: #222;
+    }
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 32px;
+      right: 0;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      width: 100%;
+      z-index: 1001;
+    }
+    .dropdown.show {
+      display: block;
+    }
+    .dropdown button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background: none;
+      color: #333;
+      text-align: left;
+      cursor: pointer;
+      font-size: 13px;
+      border-bottom: 1px solid #eee;
+    }
+    .dropdown button:last-child {
+      border-bottom: none;
+    }
+    .dropdown button:hover {
+      background: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .quiz-card {
+      background: #fff;
+      border: 1px solid #e6e6e6;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      min-height: 140px;
+    }
+    .quiz-card-title { font-weight: 600; margin-bottom: 6px; }
+    .quiz-card-desc { color: #666; font-size: 13px; margin-bottom: 8px; flex: 1; }
+    .quiz-card-meta { font-size: 12px; color: #888; }
+    .quiz-card-actions { display:flex; gap:8px; margin-top:8px; }
+    .empty-state { color:#666; padding:24px; text-align:center; }
+    /* Controls layout */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin: 12px auto 20px;
+      padding: 0 12px;
+    }
+    .search-wrap { width: 964.01px; max-width: 100%; }
+    .search-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      box-shadow: none;
+      font-size: 15px;
+      box-sizing: border-box;
+      margin: 0;
+      display: block;
+    }
+    .select-actions { width: 964.01px; max-width:100%; display:flex; gap:12px; align-items:center; }
+    .sort-select { padding: 10px 12px; border-radius:8px; border:1px solid #e0e0e0; flex:1; min-width:120px; }
+    #createBtn { padding: 10px 14px; border-radius:8px; background:#2563eb; color:#fff; border:none; cursor:pointer; min-width:140px; display:inline-flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-title">Quiz App</div>
+  </header>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <main class="container">
+    <div class="content">
+      <h1>Available Quizzes</h1>
+
+      <div class="controls">
+        <div class="search-wrap">
+          <input id="searchInput" class="search-input" placeholder="Search quizzes by title..." />
+        </div>
+        <div class="select-actions">
+          <select id="sortSelect" class="sort-select">
+            <option value="date-desc">Newest</option>
+            <option value="date-asc">Oldest</option>
+            <option value="title-asc">Title A→Z</option>
+            <option value="title-desc">Title Z→A</option>
+          </select>
+          <button id="createBtn">Create Quiz</button>
+        </div>
+      </div>
+
+      <p id="error" class="error"></p>
+
+      <div id="quizList" class="cards-grid"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { getToken, clearToken } from './api.js';
+
+    const quizList = document.getElementById('quizList');
+    const errorEl = document.getElementById('error');
+    const createBtn = document.getElementById('createBtn');
+
+    let profile = null;
+
+    createBtn.addEventListener('click', () => {
+      window.location.href = 'create-quiz.html';
+    });
+
+    async function loadQuizzes() {
+      try {
+        const token = getToken();
+
+        if (!token) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        // load profile first to know role and id
+        const profileRes = await fetch('http://localhost:5000/api/users/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        profile = await profileRes.json();
+
+        // Create role label on the left
+        if (profile) {
+          const roleDiv = document.createElement('div');
+          roleDiv.className = 'roleLabel' + (profile.role === 'admin' ? ' admin' : '');
+          roleDiv.innerText = '(' + profile.role + ')';
+          document.body.appendChild(roleDiv);
+        }
+
+        // Create profile menu on the right
+        if (profile) {
+          const menuDiv = document.createElement('div');
+          menuDiv.className = 'profileMenu';
+          
+          const btn = document.createElement('button');
+          btn.className = 'profileBtn' + (profile.role === 'admin' ? ' admin' : '');
+          btn.innerText = profile.email;
+          
+          const dropdown = document.createElement('div');
+          dropdown.className = 'dropdown';
+          
+          // Create change-password inline form and other dropdown buttons
+          function renderDropdown() {
+            dropdown.innerHTML = '';
+
+            const changePassBtn = document.createElement('button');
+            changePassBtn.innerText = 'Change Password';
+            changePassBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              renderChangeForm();
+            });
+
+            const resultsBtn = document.createElement('button');
+            resultsBtn.innerText = profile.role === 'admin' ? 'All Results' : 'My Results';
+            resultsBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              window.location.href = 'results.html';
+            });
+
+            const logoutDropdownBtn = document.createElement('button');
+            logoutDropdownBtn.innerText = 'Logout';
+            logoutDropdownBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              clearToken();
+              window.location.href = 'login.html';
+            });
+
+            dropdown.appendChild(changePassBtn);
+            dropdown.appendChild(resultsBtn);
+            dropdown.appendChild(logoutDropdownBtn);
+          }
+
+          function renderChangeForm() {
+            dropdown.innerHTML = '';
+
+            const wrap = document.createElement('div');
+            wrap.style.padding = '10px';
+
+            const newPass = document.createElement('input');
+            newPass.type = 'password';
+            newPass.placeholder = 'New Password';
+            newPass.style.display = 'block';
+            newPass.style.width = '100%';
+            newPass.style.marginBottom = '8px';
+
+            const confPass = document.createElement('input');
+            confPass.type = 'password';
+            confPass.placeholder = 'Confirm Password';
+            confPass.style.display = 'block';
+            confPass.style.width = '100%';
+            confPass.style.marginBottom = '8px';
+
+            const changeBtnInline = document.createElement('button');
+            changeBtnInline.innerText = 'Change Password';
+            changeBtnInline.style.marginRight = '8px';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.innerText = 'Cancel';
+
+            const msg = document.createElement('div');
+            msg.style.color = 'red';
+            msg.style.marginTop = '8px';
+
+            changeBtnInline.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              msg.innerText = '';
+              const np = newPass.value.trim();
+              const cp = confPass.value.trim();
+              if (!np || !cp) {
+                msg.innerText = 'All fields are required';
+                return;
+              }
+              if (np !== cp) {
+                msg.innerText = 'Passwords do not match';
+                return;
+              }
+              if (np.length < 6) {
+                msg.innerText = 'Password must be at least 6 characters';
+                return;
+              }
+
+              try {
+                const res = await fetch('http://localhost:5000/api/users/profile', {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${getToken()}`,
+                  },
+                  body: JSON.stringify({ password: np }),
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                  msg.innerText = data.message || 'Failed to change password';
+                  return;
+                }
+
+                msg.style.color = 'green';
+                msg.innerText = 'Password changed successfully';
+                setTimeout(() => {
+                  renderDropdown();
+                  msg.style.color = 'red';
+                }, 1200);
+              } catch (err) {
+                msg.innerText = 'Server error';
+              }
+            });
+
+            cancelBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              renderDropdown();
+            });
+
+            wrap.appendChild(newPass);
+            wrap.appendChild(confPass);
+            wrap.appendChild(changeBtnInline);
+            wrap.appendChild(cancelBtn);
+            wrap.appendChild(msg);
+
+            dropdown.appendChild(wrap);
+          }
+
+          // initially render standard dropdown
+          renderDropdown();
+          
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+          });
+          
+          document.addEventListener('click', (e) => {
+            if (!menuDiv.contains(e.target)) {
+              dropdown.classList.remove('show');
+            }
+          });
+          
+          menuDiv.appendChild(btn);
+          menuDiv.appendChild(dropdown);
+          const header = document.querySelector('.site-header') || document.body;
+          header.appendChild(menuDiv);
+        }
+
+        const res = await fetch('http://localhost:5000/api/quizzes', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json();
+
+        console.log('QUIZZES FROM API:', data);
+
+        if (!res.ok) {
+          errorEl.innerText = data.message || 'Failed to load quizzes';
+          return;
+        }
+
+        quizList.innerHTML = '';
+
+        // keep quizzes in memory for filtering/sorting
+        const quizzes = data;
+
+        const searchInputEl = document.getElementById('searchInput');
+        const sortSelectEl = document.getElementById('sortSelect');
+
+        function escapeHtml(str) {
+          if (!str) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        function getOwnerId(q) {
+          return q.owner && (q.owner._id ? q.owner._id : q.owner);
+        }
+
+        function renderQuizzes() {
+          const q = (searchInputEl.value || '').trim().toLowerCase();
+          const sort = sortSelectEl.value;
+
+          let items = quizzes.filter((quiz) => {
+            if (!q) return true;
+            const title = (quiz.title || '').toLowerCase();
+            const desc = (quiz.description || '').toLowerCase();
+            return title.includes(q) || desc.includes(q);
+          });
+
+          items.sort((a, b) => {
+            if (sort === 'date-asc') return new Date(a.createdAt) - new Date(b.createdAt);
+            if (sort === 'date-desc') return new Date(b.createdAt) - new Date(a.createdAt);
+            if (sort === 'title-asc') return (a.title || '').localeCompare(b.title || '');
+            if (sort === 'title-desc') return (b.title || '').localeCompare(a.title || '');
+            return 0;
+          });
+
+          quizList.innerHTML = '';
+
+          if (!items.length) {
+            quizList.innerHTML = `<div class="empty-state">No quizzes found</div>`;
+            return;
+          }
+
+          items.forEach((quiz) => {
+            const card = document.createElement('div');
+            card.className = 'quiz-card';
+
+            card.innerHTML = `
+              <div>
+                <div class="quiz-card-title">${escapeHtml(quiz.title)}</div>
+                <div class="quiz-card-desc">${escapeHtml(quiz.description || '')}</div>
+                <div class="quiz-card-meta">${profile && profile.role === 'admin' ? `<small>Owner: ${escapeHtml(quiz.owner.username || quiz.owner.email || '')}</small>` : ''}</div>
+              </div>
+              <div class="quiz-card-actions">
+                <button class="openBtn" data-id="${quiz._id}">Open</button>
+                <button class="editBtn" data-id="${quiz._id}" style="display:none;">Edit</button>
+                <button class="deleteBtn" data-id="${quiz._id}" style="display:none;">Delete</button>
+              </div>
+            `;
+
+            card.querySelector('.openBtn').addEventListener('click', () => {
+              window.location.href = `quiz.html?id=${quiz._id}`;
+            });
+
+            const ownerId = getOwnerId(quiz);
+            if (profile && (profile.role === 'admin' || ownerId === profile._id)) {
+              const editBtn = card.querySelector('.editBtn');
+              const delBtn = card.querySelector('.deleteBtn');
+              editBtn.style.display = 'inline-block';
+              delBtn.style.display = 'inline-block';
+
+              editBtn.addEventListener('click', () => {
+                window.open(`edit.html?id=${quiz._id}`, '_blank');
+              });
+
+              delBtn.addEventListener('click', async () => {
+                if (!confirm('Delete this quiz?')) return;
+                try {
+                  const dres = await fetch(`http://localhost:5000/api/quizzes/${quiz._id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+
+                  if (!dres.ok) {
+                    const err = await dres.json();
+                    alert(err.message || 'Failed to delete');
+                    return;
+                  }
+
+                  loadQuizzes();
+                } catch (err) {
+                  alert('Server error');
+                }
+              });
+            }
+
+            quizList.appendChild(card);
+          });
+        }
+
+        // wire up search and sort
+        document.getElementById('searchInput').addEventListener('input', renderQuizzes);
+        document.getElementById('sortSelect').addEventListener('change', renderQuizzes);
+
+        renderQuizzes();
+      } catch (err) {
+        console.error(err);
+        errorEl.innerText = 'Server error';
+      }
+    }
+
+    loadQuizzes();
+  </script>
+</body>
+</html>

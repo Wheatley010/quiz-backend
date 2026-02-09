@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Quiz</title>
+  <style>
+    .roleLabel {
+      position: fixed;
+      top: 8px;
+      left: 12px;
+      background: #444;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 999;
+    }
+    .roleLabel.admin {
+      background: #222;
+    }
+    h1 { text-align: center; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-title">Quiz App</div>
+  </header>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <main class="container">
+    <div class="form-card">
+      <h2>Create Quiz</h2>
+      <div class="center-col">
+        <!-- QUIZ INFO -->
+        <input id="quizTitle" placeholder="Quiz title" />
+        <textarea id="quizDescription" placeholder="Quiz description"></textarea>
+
+        <hr />
+
+        <!-- ADD QUESTION -->
+        <h3>Add Question</h3>
+
+        <input id="questionText" placeholder="Question text" />
+
+        <!-- OPTIONS -->
+        <label>
+          Options count:
+          <select id="optionsCount">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+
+        <div id="optionsInputs"></div>
+
+        <div class="spaced">
+          <button id="addQuestionBtn" type="button">Add question</button>
+        </div>
+
+        <hr />
+
+        <!-- QUESTIONS PREVIEW -->
+        <h3>Questions</h3>
+        <ul id="questionsList"></ul>
+
+        <div class="spaced">
+          <button id="saveQuizBtn" type="button">Save quiz</button>
+        </div>
+
+        <div class="spaced">
+          <button id="backBtn" type="button">Back to Quizzes</button>
+        </div>
+
+        <p id="error" class="error"></p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { getToken } from './api.js';
+
+    const questions = [];
+    const params = new URLSearchParams(window.location.search);
+    let profile = null;
+
+    const optionsCountEl = document.getElementById('optionsCount');
+    const optionsInputs = document.getElementById('optionsInputs');
+    const questionsList = document.getElementById('questionsList');
+    const errorEl = document.getElementById('error');
+
+    function renderOptions() {
+      const count = Number(optionsCountEl.value);
+      optionsInputs.innerHTML = '';
+
+      for (let i = 0; i < count; i++) {
+        optionsInputs.innerHTML += `
+          <div style="display: flex; align-items: center; margin-bottom: 6px;">
+            <input type="text" placeholder="Option ${i + 1}" style="margin-right: 10px;" />
+            <label>
+              <input type="radio" name="correct" value="${i}" />
+              Correct
+            </label>
+          </div>
+        `;
+      }
+    }
+
+    optionsCountEl.addEventListener('change', renderOptions);
+    renderOptions();
+
+    document.getElementById('addQuestionBtn').addEventListener('click', () => {
+      const questionText = document.getElementById('questionText').value.trim();
+      const correctEl = document.querySelector('input[name="correct"]:checked');
+
+      if (!questionText || !correctEl) {
+        alert('Fill question text and choose correct answer');
+        return;
+      }
+
+      const optionInputs = optionsInputs.querySelectorAll('input[type="text"]');
+      const options = [...optionInputs].map(i => i.value.trim());
+
+      if (options.some(o => !o)) {
+        alert('All options must be filled');
+        return;
+      }
+
+      questions.push({
+        question: questionText,
+        options,
+        correctAnswer: Number(correctEl.value),
+      });
+
+      const li = document.createElement('li');
+      li.innerText = questionText;
+      questionsList.appendChild(li);
+
+      document.getElementById('questionText').value = '';
+      renderOptions();
+    });
+
+    function renderQuestionsList() {
+      questionsList.innerHTML = '';
+      questions.forEach((q, idx) => {
+        const li = document.createElement('li');
+        li.innerText = q.question;
+        questionsList.appendChild(li);
+      });
+    }
+
+    // fetch profile and show role badge
+    (async () => {
+      try {
+        const p = await fetch('http://localhost:5000/api/users/profile', { headers: { Authorization: `Bearer ${getToken()}` } });
+        if (p.ok) profile = await p.json();
+        if (profile) {
+          const roleDiv = document.createElement('div');
+          roleDiv.className = 'roleLabel' + (profile.role === 'admin' ? ' admin' : '');
+          roleDiv.innerText = '(' + profile.role + ')';
+          document.body.appendChild(roleDiv);
+        }
+      } catch (e) {}
+    })();
+
+    document.getElementById('saveQuizBtn').addEventListener('click', async () => {
+      const title = document.getElementById('quizTitle').value.trim();
+      const description = document.getElementById('quizDescription').value.trim();
+
+      if (!title || questions.length === 0) {
+        errorEl.innerText = 'Quiz title and at least one question required';
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/api/quizzes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({ title, description, questions }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorEl.innerText = data.message || 'Failed to save quiz';
+          return;
+        }
+
+        window.location.href = 'quizzes.html';
+      } catch (err) {
+        errorEl.innerText = 'Server error';
+      }
+    });
+
+    // Back button handler
+    document.getElementById('backBtn').addEventListener('click', () => {
+      window.location.href = 'quizzes.html';
+    });
+  </script>
+</body>
+</html>

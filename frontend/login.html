@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-title">Quiz App</div>
+  </header>
+
+  <main class="container">
+    <div class="form-card">
+      <h2>Login</h2>
+      <div class="center-col">
+        <input id="email" type="email" placeholder="Email" />
+        <input id="password" type="password" placeholder="Password" />
+        <div class="spaced">
+          <button id="loginBtn">Login</button>
+        </div>
+        <p class="spaced muted">No account? <a href="register.html">Register</a></p>
+        <p id="error" class="error"></p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { setToken } from './api.js';
+
+    const loginBtn = document.getElementById('loginBtn');
+
+    loginBtn.addEventListener('click', login);
+
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById('error').innerText = data.message;
+        return;
+      }
+
+      setToken(data.token);
+      window.location.href = 'quizzes.html';
+    }
+  </script>
+</body>
+</html>

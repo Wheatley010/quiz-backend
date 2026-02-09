@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Results</title>
+  <style>
+    .roleLabel {
+      position: fixed;
+      top: 8px;
+      left: 12px;
+      background: #444;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 999;
+    }
+    .roleLabel.admin {
+      background: #222;
+    }
+    h1 { text-align: center; margin-bottom: 30px; }
+    
+    /* Statistics Section */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .stat-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      color: #666;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #2563eb;
+    }
+    
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .sort-btn, .filter-btn {
+      padding: 8px 12px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #000;
+      transition: all 0.2s;
+    }
+    .sort-btn:hover, .filter-btn:hover {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+    }
+    .sort-btn.active, .filter-btn.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+    
+    /* Results List */
+    #resultsList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .result-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #e5e7eb;
+      transition: all 0.2s;
+    }
+    .result-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .result-card.excellent {
+      border-left-color: #10b981;
+    }
+    .result-card.normal {
+      border-left-color: #f59e0b;
+    }
+    .result-card.poor {
+      border-left-color: #ef4444;
+    }
+    
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .result-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+      margin: 0;
+    }
+    .result-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-excellent {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .badge-normal {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .badge-poor {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .result-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      color: #666;
+    }
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    /* Progress Bar */
+    .progress-container {
+      margin: 15px 0;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+    .progress-fill.excellent {
+      background: #10b981;
+    }
+    .progress-fill.normal {
+      background: #f59e0b;
+    }
+    .progress-fill.poor {
+      background: #ef4444;
+    }
+    
+    .score-percentage {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+    
+    /* Actions */
+    .result-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .action-btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .retry-btn {
+      background: #3b82f6;
+      color: white;
+    }
+    .retry-btn:hover {
+      background: #2563eb;
+    }
+    .details-btn {
+      background: #f3f4f6;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+    }
+    .details-btn:hover {
+      background: #e5e7eb;
+    }
+    .delete-btn {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    .delete-btn:hover {
+      background: #fecaca;
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6b7280;
+    }
+    .empty-state h2 {
+      font-size: 24px;
+      color: #374151;
+      margin-bottom: 10px;
+    }
+    .empty-state p {
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.2s;
+    }
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 10px;
+      padding: 30px;
+      max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 10px;
+    }
+    .modal-body {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .modal-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .modal-btn-cancel {
+      background: #f3f4f6;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+    }
+    .modal-btn-cancel:hover {
+      background: #e5e7eb;
+    }
+    .modal-btn-confirm {
+      background: #ef4444;
+      color: white;
+    }
+    .modal-btn-confirm:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-title">Quiz App</div>
+  </header>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <main class="container">
+    <div class="content">
+      <h1 id="pageTitle">📊 My Results</h1>
+
+      <p class="spaced"><a href="quizzes.html">← Back to quizzes</a></p>
+
+      <!-- Statistics Section -->
+      <div class="stats-container" id="statsContainer"></div>
+
+      <!-- Controls -->
+      <div class="controls" id="controlsContainer"></div>
+
+      <!-- Results List -->
+      <ul id="resultsList"></ul>
+
+      <p id="error" class="error"></p>
+    </div>
+  </main>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">🗑️ Delete Result</div>
+      <div class="modal-body">Are you sure you want to delete this result? This action cannot be undone.</div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" id="cancelDeleteBtn">Cancel</button>
+        <button class="modal-btn modal-btn-confirm" id="confirmDeleteBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getToken } from './api.js';
+
+    const resultsList = document.getElementById('resultsList');
+    const errorEl = document.getElementById('error');
+    const statsContainer = document.getElementById('statsContainer');
+    const controlsContainer = document.getElementById('controlsContainer');
+    const deleteModal = document.getElementById('deleteModal');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+    let allResults = [];
+    let filteredResults = [];
+    let currentSort = 'date-desc';
+    let currentFilter = 'all';
+    let pendingDeleteId = null;
+
+    function showDeleteModal() {
+      deleteModal.classList.add('show');
+    }
+
+    function hideDeleteModal() {
+      deleteModal.classList.remove('show');
+      pendingDeleteId = null;
+    }
+
+    cancelDeleteBtn.addEventListener('click', hideDeleteModal);
+    deleteModal.addEventListener('click', (e) => {
+      if (e.target === deleteModal) {
+        hideDeleteModal();
+      }
+    });
+
+    confirmDeleteBtn.addEventListener('click', async () => {
+      if (pendingDeleteId) {
+        try {
+          const res = await fetch(`http://localhost:5000/api/results/${pendingDeleteId}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${getToken()}`
+            }
+          });
+
+          if (res.ok) {
+            allResults = allResults.filter(result => result._id !== pendingDeleteId);
+            renderStats(allResults);
+            sortAndRender();
+            hideDeleteModal();
+          } else {
+            alert('Failed to delete result');
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Error deleting result');
+        }
+      }
+    });
+
+    function getScorePercentage(score, total) {
+      return total > 0 ? Math.round((score / total) * 100) : 0;
+    }
+
+    function getScoreLevel(percentage) {
+      if (percentage >= 70) return 'excellent';
+      if (percentage >= 30) return 'normal';
+      return 'poor';
+    }
+
+    function calculateStats(results) {
+      if (results.length === 0) {
+        return {
+          totalTests: 0,
+          averageScore: 0,
+          bestScore: 0,
+          worstScore: 0
+        };
+      }
+
+      const scores = results.map(r => getScorePercentage(r.score, r.total));
+      const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+      return {
+        totalTests: results.length,
+        averageScore: Math.round(averageScore),
+        bestScore: Math.max(...scores),
+        worstScore: Math.min(...scores)
+      };
+    }
+
+    function renderStats(results) {
+      const stats = calculateStats(results);
+      
+      statsContainer.innerHTML = `
+        <div class="stat-card">
+          <h3>Total Tests</h3>
+          <div class="stat-value">${stats.totalTests}</div>
+        </div>
+        <div class="stat-card">
+          <h3>Average Score</h3>
+          <div class="stat-value">${stats.averageScore}%</div>
+        </div>
+        <div class="stat-card">
+          <h3>Best Score</h3>
+          <div class="stat-value">${stats.bestScore}%</div>
+        </div>
+        <div class="stat-card">
+          <h3>Worst Score</h3>
+          <div class="stat-value">${stats.worstScore}%</div>
+        </div>
+      `;
+    }
+
+    function renderControls() {
+      controlsContainer.innerHTML = `
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <strong style="align-self: center; color: #666;">Sort:</strong>
+          <button class="sort-btn ${currentSort === 'date-desc' ? 'active' : ''}" data-sort="date-desc">Newest</button>
+          <button class="sort-btn ${currentSort === 'date-asc' ? 'active' : ''}" data-sort="date-asc">Oldest</button>
+          <button class="sort-btn ${currentSort === 'score-desc' ? 'active' : ''}" data-sort="score-desc">Highest Score</button>
+          <button class="sort-btn ${currentSort === 'score-asc' ? 'active' : ''}" data-sort="score-asc">Lowest Score</button>
+        </div>
+      `;
+
+      controlsContainer.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          currentSort = e.target.dataset.sort;
+          sortAndRender();
+          renderControls();
+        });
+      });
+    }
+
+    function sortResults(results) {
+      const sorted = [...results];
+
+      switch (currentSort) {
+        case 'date-desc':
+          sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          break;
+        case 'date-asc':
+          sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          break;
+        case 'score-desc':
+          sorted.sort((a, b) => {
+            const aPercent = getScorePercentage(a.score, a.total);
+            const bPercent = getScorePercentage(b.score, b.total);
+            return bPercent - aPercent;
+          });
+          break;
+        case 'score-asc':
+          sorted.sort((a, b) => {
+            const aPercent = getScorePercentage(a.score, a.total);
+            const bPercent = getScorePercentage(b.score, b.total);
+            return aPercent - bPercent;
+          });
+          break;
+      }
+
+      return sorted;
+    }
+
+    function sortAndRender() {
+      filteredResults = sortResults(allResults);
+      renderResults(filteredResults);
+    }
+
+    function renderResults(results) {
+      if (results.length === 0) {
+        resultsList.innerHTML = `
+          <div class="empty-state">
+            <h2>📝 No Results Yet</h2>
+            <p>You haven't completed any quizzes yet. Start by taking a quiz to see your results here.</p>
+            <a href="quizzes.html" class="back-link">← Go to Quizzes</a>
+          </div>
+        `;
+        return;
+      }
+
+      resultsList.innerHTML = '';
+
+      results.forEach((r, idx) => {
+        const quizTitle = r.quiz && r.quiz.title ? r.quiz.title : '❌ Deleted quiz';
+        const percentage = getScorePercentage(r.score, r.total);
+        const level = getScoreLevel(percentage);
+        const userLine = r.user && (r.user.username || r.user.email) ? `<div class="info-item">👤 <strong>${r.user.username ? r.user.username : r.user.email}</strong></div>` : '';
+        const date = new Date(r.createdAt).toLocaleString();
+        
+        let badgeClass = `badge-${level}`;
+        
+        const li = document.createElement('li');
+        li.className = `result-card ${level}`;
+        li.innerHTML = `
+          <div class="result-header">
+            <h3 class="result-title">${quizTitle}</h3>
+            <span class="result-badge ${badgeClass}">${level.toUpperCase()}</span>
+          </div>
+          
+          <div class="result-info">
+            ${userLine}
+            <div class="info-item">📅 ${date}</div>
+            <div class="info-item">🎯 Score: ${r.score}/${r.total}</div>
+          </div>
+          
+          <div class="progress-container">
+            <div class="score-percentage">${percentage}%</div>
+            <div class="progress-bar">
+              <div class="progress-fill ${level}" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+          
+          <div class="result-actions">
+            <button class="action-btn retry-btn" data-quiz-id="${r.quiz ? r.quiz._id : ''}">🔄 Retry</button>
+            <button class="action-btn delete-btn" data-result-id="${r._id}">🗑️ Delete</button>
+          </div>
+        `;
+
+        // Retry button handler
+        li.querySelector('.retry-btn').addEventListener('click', () => {
+          if (r.quiz && r.quiz._id) {
+            window.location.href = `quiz.html?id=${r.quiz._id}`;
+          }
+        });
+
+        // Delete button handler
+        li.querySelector('.delete-btn').addEventListener('click', () => {
+          pendingDeleteId = r._id;
+          showDeleteModal();
+        });
+
+        resultsList.appendChild(li);
+      });
+    }
+
+    async function loadResults() {
+      const token = getToken();
+
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      try {
+        // show role badge and update title based on role
+        try {
+          const p = await fetch('http://localhost:5000/api/users/profile', { headers: { Authorization: `Bearer ${token}` } });
+          const profile = await p.json();
+          if (p.ok && profile) {
+            const roleDiv = document.createElement('div');
+            roleDiv.className = 'roleLabel' + (profile.role === 'admin' ? ' admin' : '');
+            roleDiv.innerText = '(' + profile.role + ')';
+            document.body.appendChild(roleDiv);
+            
+            // Change title based on role
+            const pageTitle = document.getElementById('pageTitle');
+            if (profile.role === 'admin') {
+              pageTitle.innerText = '📊 All Results';
+            } else {
+              pageTitle.innerText = '📊 My Results';
+            }
+          }
+        } catch (e) {}
+
+        const res = await fetch('http://localhost:5000/api/results', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorEl.innerText = data.message || 'Failed to load results';
+          return;
+        }
+
+        allResults = data;
+        filteredResults = sortResults(allResults);
+
+        renderStats(allResults);
+        renderControls();
+        renderResults(filteredResults);
+
+      } catch (err) {
+        console.error(err);
+        errorEl.innerText = 'Server error';
+      }
+    }
+
+    loadResults();
+  </script>
+</body>
+</html>

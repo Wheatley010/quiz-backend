@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quiz</title>
+  <style>
+    .roleLabel {
+      position: fixed;
+      top: 8px;
+      left: 12px;
+      background: #444;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 999;
+    }
+    .roleLabel.admin {
+      background: #222;
+    }
+    h2 {
+      text-align: center;
+    }
+    .button-group {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    #submitBtn, #backBtn {
+      padding: 10px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #submitBtn {
+      background: #007bff;
+      color: #fff;
+    }
+    #submitBtn:hover {
+      background: #0056b3;
+    }
+    #backBtn {
+      background: #6c757d;
+      color: #fff;
+    }
+    #backBtn:hover {
+      background: #5a6268;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 400px;
+    }
+    .modal-content h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .modal-content p {
+      color: #666;
+      margin: 15px 0;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .modal-buttons button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .modal-buttons .btn-finish {
+      background: #dc3545;
+      color: #fff;
+    }
+    .modal-buttons .btn-finish:hover {
+      background: #c82333;
+    }
+    .modal-buttons .btn-continue {
+      background: #6c757d;
+      color: #fff;
+    }
+    .modal-buttons .btn-continue:hover {
+      background: #5a6268;
+    }
+    /* Quiz option layout: place radio left of text and keep radios small */
+    .question-block { margin-bottom: 18px; }
+    .question-block p { margin: 6px 0 10px 0; }
+    .option { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+    .option input[type="radio"] { width: auto; height: auto; margin: 0; }
+    .option-text { flex: 1; }
+    .option.correct { background: rgba(16,185,129,0.08); border-radius:6px; }
+    .option.incorrect { background: rgba(239,68,68,0.06); border-radius:6px; }
+    .feedback { font-size: 13px; margin-top:6px; color: #374151 }
+    .feedback.correct { color: #0ea5a4; font-weight:600 }
+    .feedback.incorrect { color: #ef4444; font-weight:600 }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-title">Quiz App</div>
+    <nav class="nav">
+      <a href="quizzes.html">Quizzes</a>
+      <a href="create-quiz.html">Create</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <main class="container">
+    <div class="content">
+      <h2 id="quizTitle"></h2>
+
+      <form id="quizForm"></form>
+
+      <div class="button-group spaced">
+        <button id="submitBtn" type="button">Submit Answers</button>
+        <button id="backBtn" type="button">Back to Quizzes</button>
+      </div>
+
+      <p id="result"></p>
+
+      <div id="confirmModal" class="modal">
+        <div class="modal-content">
+          <h3>Are you sure?</h3>
+          <p id="confirmMessage"></p>
+          <div class="modal-buttons">
+            <button class="btn-finish" id="confirmFinish">Finish Quiz</button>
+            <button class="btn-continue" id="confirmContinue">Continue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { getToken } from './api.js';
+
+    const quizTitle = document.getElementById('quizTitle');
+    const quizForm = document.getElementById('quizForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const resultEl = document.getElementById('result');
+    const backBtn = document.getElementById('backBtn');
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmFinish = document.getElementById('confirmFinish');
+    const confirmContinue = document.getElementById('confirmContinue');
+
+    let profile = null;
+    let allowSubmit = false;
+
+    const params = new URLSearchParams(window.location.search);
+    const quizId = params.get('id');
+
+    let quizData = null;
+
+    async function loadQuiz() {
+      const token = getToken();
+
+      // try fetch profile for role badge
+      try {
+        const pRes = await fetch('http://localhost:5000/api/users/profile', { headers: { Authorization: `Bearer ${token}` } });
+        if (pRes.ok) profile = await pRes.json();
+        if (profile) {
+          const roleDiv = document.createElement('div');
+          roleDiv.className = 'roleLabel' + (profile.role === 'admin' ? ' admin' : '');
+          roleDiv.innerText = '(' + profile.role + ')';
+          document.body.appendChild(roleDiv);
+        }
+      } catch (e) {}
+
+      const res = await fetch(`http://localhost:5000/api/quizzes/${quizId}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      });
+
+      quizData = await res.json();
+
+      quizTitle.innerText = quizData.title;
+
+      quizData.questions.forEach((q, index) => {
+        const div = document.createElement('div');
+        div.className = 'question-block';
+
+        const qTitle = document.createElement('p');
+        qTitle.innerHTML = `<strong>${index + 1}. ${q.question}</strong>`;
+        div.appendChild(qTitle);
+
+        q.options.forEach((opt, i) => {
+          const lbl = document.createElement('label');
+          lbl.className = 'option';
+          lbl.dataset.optionIndex = i;
+
+          const inp = document.createElement('input');
+          inp.type = 'radio';
+          inp.name = `question-${index}`;
+          inp.value = i;
+
+          const span = document.createElement('span');
+          span.className = 'option-text';
+          span.innerText = opt;
+
+          lbl.appendChild(inp);
+          lbl.appendChild(span);
+          div.appendChild(lbl);
+        });
+
+        // feedback placeholder
+        const fb = document.createElement('div');
+        fb.className = 'feedback';
+        fb.id = `feedback-${index}`;
+        div.appendChild(fb);
+
+        quizForm.appendChild(div);
+      });
+    }
+
+    backBtn.addEventListener('click', () => {
+      window.location.href = './quizzes.html';
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      // Check how many questions are unanswered
+      let answeredCount = 0;
+      quizData.questions.forEach((q, index) => {
+        const selected = document.querySelector(
+          `input[name="question-${index}"]:checked`
+        );
+        if (selected) answeredCount++;
+      });
+
+      const unansweredCount = quizData.questions.length - answeredCount;
+
+      // If some questions are unanswered, show confirmation dialog
+      if (unansweredCount > 0) {
+        confirmMessage.innerText = `Are you sure you want to finish this quiz? You missed ${unansweredCount} question${unansweredCount > 1 ? 's' : ''}.`;
+        confirmModal.classList.add('show');
+        return;
+      }
+
+      // If all answered, submit directly
+      await submitQuiz();
+    });
+
+    confirmFinish.addEventListener('click', async () => {
+      confirmModal.classList.remove('show');
+      await submitQuiz();
+    });
+
+    confirmContinue.addEventListener('click', () => {
+      confirmModal.classList.remove('show');
+    });
+
+    async function submitQuiz() {
+      let score = 0;
+
+      quizData.questions.forEach((q, index) => {
+        const selected = document.querySelector(`input[name="question-${index}"]:checked`);
+        const options = document.querySelectorAll(`#quizForm .question-block:nth-child(${index + 1}) .option`);
+
+        // clear previous classes
+        options.forEach(optEl => optEl.classList.remove('correct', 'incorrect'));
+
+        const fb = document.getElementById(`feedback-${index}`);
+        fb.className = 'feedback';
+        fb.innerText = '';
+
+        if (selected) {
+          const selVal = Number(selected.value);
+          if (selVal === q.correctAnswer) {
+            score++;
+            // mark selected option as correct
+            const correctLbl = Array.from(options).find(o => Number(o.dataset.optionIndex) === selVal);
+            if (correctLbl) correctLbl.classList.add('correct');
+            fb.classList.add('correct');
+            fb.innerText = 'Correct';
+          } else {
+            // mark selected as incorrect and mark correct one
+            const selLbl = Array.from(options).find(o => Number(o.dataset.optionIndex) === selVal);
+            if (selLbl) selLbl.classList.add('incorrect');
+            const correctLbl = Array.from(options).find(o => Number(o.dataset.optionIndex) === q.correctAnswer);
+            if (correctLbl) correctLbl.classList.add('correct');
+            fb.classList.add('incorrect');
+            fb.innerText = `Incorrect — correct answer: ${q.options[q.correctAnswer]}`;
+          }
+        } else {
+          // unanswered: show correct one
+          const correctLbl = Array.from(options).find(o => Number(o.dataset.optionIndex) === q.correctAnswer);
+          if (correctLbl) correctLbl.classList.add('correct');
+          fb.classList.add('incorrect');
+          fb.innerText = `Unanswered — correct answer: ${q.options[q.correctAnswer]}`;
+        }
+      });
+
+      resultEl.innerText = `Your result: ${score} / ${quizData.questions.length}`;
+
+      // ✅ РЕАЛЬНОЕ сохранение результата
+      try {
+        await fetch('http://localhost:5000/api/results', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({
+            quizId: quizData._id,
+            score,
+            total: quizData.questions.length
+          })
+        });
+      } catch (err) {
+        console.error('Failed to save result', err);
+      }
+    }
+
+    loadQuiz();
+  </script>
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Quiz</title>
+  <style>
+    .roleLabel {
+      position: fixed;
+      top: 8px;
+      left: 12px;
+      background: #444;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 999;
+    }
+    .roleLabel.admin {
+      background: #222;
+    }
+    h1 { text-align: center; }
+    .question-actions { margin-left: 12px; }
+    .option-input { display:block; margin-bottom:6px; }
+    .delete-btn-circle {
+      cursor: pointer;
+      background: #e74c3c;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      color: white;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .delete-btn-circle:hover {
+      background: #c0392b;
+    }
+    .question-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .question-item span {
+      flex: 1;
+    }
+    .mode-btn {
+      padding: 6px 12px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .mode-btn:hover {
+      background: #2980b9;
+    }
+    .mode-btn.active {
+      background: #e74c3c;
+    }
+    .question-item.edit-mode:hover {
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      padding: 8px;
+      margin-left: -8px;
+      margin-right: -8px;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-title">Quiz App</div>
+  </header>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <main class="container">
+    <div class="form-card">
+      <h2>Edit Quiz</h2>
+      <div class="center-col">
+        <!-- QUIZ INFO -->
+        <input id="quizTitle" placeholder="Quiz title" />
+        <textarea id="quizDescription" placeholder="Quiz description"></textarea>
+
+        <hr />
+
+        <!-- ADD QUESTION -->
+        <h3>Add Question</h3>
+
+        <input id="questionText" placeholder="Question text" />
+
+        <!-- OPTIONS -->
+        <label>
+          Options count:
+          <select id="optionsCount">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+
+        <div id="optionsInputs"></div>
+
+        <div class="spaced">
+          <button id="addQuestionBtn" type="button">Add question</button>
+        </div>
+
+        <hr />
+
+        <!-- QUESTIONS PREVIEW -->
+        <h3 style="display: inline-block; margin-right: 20px;">Questions</h3>
+        <button id="editQuestionsBtn" class="mode-btn">Edit</button>
+        <button id="deleteQuestionsBtn" class="mode-btn">Delete</button>
+        <ul id="questionsList"></ul>
+
+        <div class="spaced">
+          <button id="saveQuizBtn" type="button">Save quiz</button>
+        </div>
+
+        <div class="spaced">
+          <button id="backBtn" type="button">Back to Quizzes</button>
+        </div>
+
+        <p id="error" class="error"></p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { getToken } from './api.js';
+
+    const questions = [];
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get('id');
+    let profile = null;
+
+    const optionsCountEl = document.getElementById('optionsCount');
+    const optionsInputs = document.getElementById('optionsInputs');
+    const questionsList = document.getElementById('questionsList');
+    const errorEl = document.getElementById('error');
+
+    let editingIndex = -1;
+    let deleteMode = false;
+    let editMode = false;
+
+    function renderOptions(prefillOptions, selectedIndex) {
+      const count = prefillOptions ? prefillOptions.length : Number(optionsCountEl.value);
+      optionsCountEl.value = count;
+      optionsInputs.innerHTML = '';
+
+      for (let i = 0; i < count; i++) {
+        const val = prefillOptions ? (prefillOptions[i] || '') : '';
+        optionsInputs.innerHTML += `
+          <div style="display: flex; align-items: center; margin-bottom: 6px; gap: 10px;">
+            <input type="text" placeholder="Option ${i + 1}" value="${val}" style="flex: 1;" />
+            <label style="cursor: pointer; white-space: nowrap; flex-shrink: 0; display: flex; align-items: center; gap: 5px;">
+              <input type="radio" name="correct" value="${i}" ${selectedIndex === i ? 'checked' : ''} style="cursor: pointer; margin: 0;" />
+              Correct
+            </label>
+          </div>
+        `;
+      }
+    }
+
+    optionsCountEl.addEventListener('change', renderOptions);
+
+    renderOptions();
+
+    document.getElementById('addQuestionBtn').addEventListener('click', () => {
+      const questionText = document.getElementById('questionText').value.trim();
+      const correctEl = document.querySelector('input[name="correct"]:checked');
+
+      if (!questionText || !correctEl) {
+        alert('Fill question text and choose correct answer');
+        return;
+      }
+
+      const optionInputs = optionsInputs.querySelectorAll('input[type="text"]');
+      const options = [...optionInputs].map(i => i.value.trim());
+
+      if (options.some(o => !o)) {
+        alert('All options must be filled');
+        return;
+      }
+
+      const questionObj = {
+        question: questionText,
+        options,
+        correctAnswer: Number(correctEl.value),
+      };
+
+      if (editingIndex === -1) {
+        questions.push(questionObj);
+      } else {
+        questions[editingIndex] = questionObj;
+        editingIndex = -1;
+        document.getElementById('addQuestionBtn').innerText = 'Add question';
+      }
+
+      renderQuestionsList();
+
+      document.getElementById('questionText').value = '';
+      renderOptions();
+    });
+
+    function renderQuestionsList() {
+      questionsList.innerHTML = '';
+      questions.forEach((q, idx) => {
+        const li = document.createElement('li');
+        li.className = 'question-item';
+        if (editMode) {
+          li.classList.add('edit-mode');
+        }
+        
+        let itemHtml = `<span>${idx + 1}. ${q.question}</span>`;
+        
+        if (deleteMode) {
+          itemHtml += `<button class="delete-btn-circle" data-idx="${idx}" title="Delete question">−</button>`;
+        }
+        
+        li.innerHTML = itemHtml;
+        
+        if (deleteMode) {
+          li.querySelector('.delete-btn-circle').addEventListener('click', () => {
+            if (!confirm('Delete this question?')) return;
+            questions.splice(idx, 1);
+            renderQuestionsList();
+          });
+        }
+        
+        if (editMode) {
+          li.style.cursor = 'pointer';
+          li.addEventListener('click', () => {
+            editingIndex = idx;
+            document.getElementById('questionText').value = q.question;
+            renderOptions(q.options, q.correctAnswer);
+            document.getElementById('addQuestionBtn').innerText = 'Save changes';
+            window.scrollTo(0, 0);
+          });
+        }
+
+        questionsList.appendChild(li);
+      });
+    }
+
+    // load quiz for editing
+    async function loadForEdit() {
+      if (!editId) {
+        window.location.href = 'quizzes.html';
+        return;
+      }
+      try {
+      // try fetch profile and show role badge
+        try {
+          const p = await fetch('http://localhost:5000/api/users/profile', { headers: { Authorization: `Bearer ${getToken()}` } });
+          if (p.ok) profile = await p.json();
+          if (profile) {
+            const roleDiv = document.createElement('div');
+            roleDiv.className = 'roleLabel' + (profile.role === 'admin' ? ' admin' : '');
+            roleDiv.innerText = '(' + profile.role + ')';
+            document.body.appendChild(roleDiv);
+          }
+        } catch (e) {}
+
+        const res = await fetch(`http://localhost:5000/api/quizzes/${editId}`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          if (res.status === 403) {
+            errorEl.innerText = 'Not authorized to edit this quiz';
+            return;
+          }
+          errorEl.innerText = err.message || 'Failed to load quiz';
+          return;
+        }
+
+        const data = await res.json();
+        document.getElementById('quizTitle').value = data.title;
+        document.getElementById('quizDescription').value = data.description || '';
+        // copy questions
+        data.questions.forEach(q => questions.push(q));
+        renderQuestionsList();
+      } catch (err) {
+        errorEl.innerText = 'Server error';
+      }
+    }
+
+    loadForEdit();
+
+    // Edit mode toggle
+    document.getElementById('editQuestionsBtn').addEventListener('click', () => {
+      editMode = !editMode;
+      deleteMode = false;
+      document.getElementById('editQuestionsBtn').classList.toggle('active');
+      document.getElementById('deleteQuestionsBtn').classList.remove('active');
+      renderQuestionsList();
+    });
+
+    // Delete mode toggle
+    document.getElementById('deleteQuestionsBtn').addEventListener('click', () => {
+      deleteMode = !deleteMode;
+      editMode = false;
+      document.getElementById('deleteQuestionsBtn').classList.toggle('active');
+      document.getElementById('editQuestionsBtn').classList.remove('active');
+      renderQuestionsList();
+    });
+
+    document.getElementById('saveQuizBtn').addEventListener('click', async () => {
+      const title = document.getElementById('quizTitle').value.trim();
+      const description = document.getElementById('quizDescription').value.trim();
+
+      if (!title || questions.length === 0) {
+        errorEl.innerText = 'Quiz title and at least one question required';
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/quizzes/${editId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({ title, description, questions }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorEl.innerText = data.message || 'Failed to save quiz';
+          return;
+        }
+
+        window.location.href = 'quizzes.html';
+      } catch (err) {
+        errorEl.innerText = 'Server error';
+      }
+    });
+
+    // Back button handler
+    document.getElementById('backBtn').addEventListener('click', () => {
+      window.location.href = 'quizzes.html';
+    });
+  </script>
+</body>
+</html>
