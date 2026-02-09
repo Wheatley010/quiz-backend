@@ -1,6 +1,5 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
-import { sendPasswordChangeEmail } from '../services/emailService.js';
 
 export const getProfile = async (req, res) => {
   res.json(req.user);
@@ -27,16 +26,6 @@ export const updateProfile = async (req, res) => {
     }
 
     const updated = await user.save();
-
-    // Отправляем письмо подтверждения если был изменен пароль
-    if (password) {
-      try {
-        await sendPasswordChangeEmail(updated.email, updated.username);
-      } catch (err) {
-        console.error('Failed to send password change email:', err);
-        // Обновление профиля продолжается даже если письмо не отправилось
-      }
-    }
 
     res.json({
       message: 'Profile updated',

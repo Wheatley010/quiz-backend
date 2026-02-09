@@ -2,7 +2,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import ApiError from '../errors/ApiError.js';
-import { sendWelcomeEmail } from '../services/emailService.js';
 
 export const register = async (req, res, next) => {
   try {
@@ -26,17 +25,6 @@ export const register = async (req, res, next) => {
       email,
       password: hashedPassword,
     });
-
-    // Отправляем приветственное письмо (не ждем, чтобы не замедлять ответ)
-    try {
-      console.log('[Auth] Attempting to send welcome email...');
-      await sendWelcomeEmail(email, username);
-      console.log('[Auth] Welcome email sent successfully');
-    } catch (err) {
-      console.error('[Auth] Failed to send welcome email:', err.message);
-      console.error('[Auth] Full error:', err);
-      // Регистрация продолжается даже если письмо не отправилось
-    }
 
     res.status(201).json({
       message: 'User registered successfully',
