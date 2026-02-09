@@ -677,27 +677,30 @@ Admin password reset successfully!
 
 ---
 
-## 👨‍💻 Development
+## 🚀 Deployment
 
-### Available Scripts
+See the full step-by-step deployment guide in `DEPLOY.md`.
 
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Start with Nodemon (auto-reload on changes) |
-| `npm start` | Start production server |
-| `npm install` | Install/update dependencies |
+- After you deploy, add the public URL here so it appears in the README and in the final submission.
 
-### Running Utility Scripts
+**Deployed URL (add after deployment):**
 
-**Seed Sample Quizzes:**
+```
+NOT DEPLOYED YET
+```
+
+For quick deploy steps (summary):
+
+1. Push code to GitHub:
 ```bash
-```bash
-node src/scripts/resetAdminPassword.js
+git push origin main
+```
+2. Connect repository to Render / Railway / Heroku and set environment variables from `.env.example`.
+3. Start command: `node src/server.js` (or use Dockerfile / Procfile included).
 
-### Development Tips
+More detailed instructions: see [DEPLOY.md](DEPLOY.md).
 
-- 🔍 **View Network Requests**: Open browser DevTools → Network tab
-  ```
+---
 - 💾 **Clear Storage**: Fresh start without logging out:
   ```javascript
   localStorage.clear(); location.reload()
