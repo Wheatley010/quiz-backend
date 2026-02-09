@@ -777,29 +777,4 @@ More detailed instructions: see [DEPLOY.md](DEPLOY.md).
 
 ---
 
-## 📝 License
 
-**ISC** — See LICENSE file for details
-
----
-
-## 🤝 Support & Contribution
-
-Have questions or found a bug?
-
-1. 📖 Check the [API Documentation](#-api-documentation) above
-2. 🔍 Review frontend HTML files for usage examples
-3. 📧 Review error responses in console
-4. ⚙️ Check environment variables in `.env`
-
----
-
-<div align="center">
-
-### Built with ❤️ using Node.js, Express & MongoDB
-
-**⭐ If you find this helpful, consider giving it a star!**
-
-[↑ Back to top](#-quiz-backend)
-
-</div>
